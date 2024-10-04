@@ -4,6 +4,8 @@ import { sql } from '@vercel/postgres';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { InvoiceForm } from '../lib/definitions';
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 
 
 export type State = {
@@ -109,5 +111,23 @@ export async function deleteInvoice(id : string) {
     redirect('/dashboard/invoices'); // redirecionar para a lista de faturas
 }
 
+
+export async function authenticate(prevState: string | undefined, formData: FormData) {
+    try {
+        await signIn('credentials', Object.fromEntries(formData));
+        // Se a autenticação for bem-sucedida, redirecione para o dashboard
+        redirect('/dashboard');
+    } catch (error) {
+        if (error instanceof AuthError) {
+            switch (error.type) {
+                case 'CredentialsSignin':
+                    return 'Credenciais inválidas.';
+                default:
+                    return 'Algo deu errado.';
+            }
+        }
+        throw error;
+    }
+}
 
 
